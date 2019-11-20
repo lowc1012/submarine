@@ -38,6 +38,8 @@ public class SubmarineConfiguration extends XMLConfiguration {
 
   private static final String SUBMARINE_SITE_XML = "submarine-site.xml";
 
+  public static final String SUBMARINE_RUNTIME_APP_TYPE = "SUBMARINE";
+
   private static SubmarineConfiguration conf;
 
   private Map<String, String> properties = new HashMap<>();
@@ -81,11 +83,19 @@ public class SubmarineConfiguration extends XMLConfiguration {
     }
   }
 
-  public static synchronized SubmarineConfiguration create() {
-    if (conf != null) {
-      return conf;
+  public static SubmarineConfiguration getInstance() {
+    if (conf == null) {
+      synchronized (SubmarineConfiguration.class) {
+        if  (conf == null) {
+          conf = newInstance();
+        }
+      }
     }
+    return conf;
+  }
 
+  public static SubmarineConfiguration newInstance() {
+    SubmarineConfiguration submarineConfig;
     ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     URL url;
 
@@ -102,37 +112,42 @@ public class SubmarineConfiguration extends XMLConfiguration {
 
     if (url == null) {
       LOG.warn("Failed to load configuration, proceeding with a default");
-      conf = new SubmarineConfiguration();
+      submarineConfig = new SubmarineConfiguration();
     } else {
       try {
         LOG.info("Load configuration from " + url);
-        conf = new SubmarineConfiguration(url);
+        submarineConfig = new SubmarineConfiguration(url);
       } catch (ConfigurationException e) {
         LOG.warn("Failed to load configuration from " + url + " proceeding with a default", e);
-        conf = new SubmarineConfiguration();
+        submarineConfig = new SubmarineConfiguration();
       }
     }
 
-    LOG.info("Server Host: " + conf.getServerAddress());
-    if (conf.useSsl() == false) {
-      LOG.info("Server Port: " + conf.getServerPort());
-    } else {
-      LOG.info("Server SSL Port: " + conf.getServerSslPort());
-    }
-
-    return conf;
+    return submarineConfig;
   }
 
   public String getServerAddress() {
     return getString(ConfVars.SERVER_ADDR);
   }
 
+  public String getJobServerAddress() {
+    return getString(ConfVars.JOB_SERVER_ADDR);
+  }
+
   public boolean useSsl() {
     return getBoolean(ConfVars.SERVER_SSL);
   }
 
+  public boolean isJobServerSslEnabled() {
+    return getBoolean(ConfVars.JOB_SERVER_SSL);
+  }
+
   public int getServerPort() {
     return getInt(ConfVars.SERVER_PORT);
+  }
+
+  public int getJobServerPort() {
+    return getInt(ConfVars.JOB_SERVER_PORT);
   }
 
   @VisibleForTesting
@@ -142,6 +157,14 @@ public class SubmarineConfiguration extends XMLConfiguration {
 
   public int getServerSslPort() {
     return getInt(ConfVars.SERVER_SSL_PORT);
+  }
+
+  public int getJobServerSslPort() {
+    return getInt(ConfVars.JOB_SERVER_SSL_PORT);
+  }
+
+  public String getJobServerUrlPrefix() {
+    return getString(ConfVars.JOB_SERVER_REST_URL_PREFIX);
   }
 
   public String getKeyStorePath() {
@@ -331,8 +354,16 @@ public class SubmarineConfiguration extends XMLConfiguration {
     return getStringValue(propertyName, defaultValue);
   }
 
+  public void setString(ConfVars c, String value) {
+    properties.put(c.getVarName(), value);
+  }
+
   public int getInt(ConfVars c) {
     return getInt(c.name(), c.getVarName(), c.getIntValue());
+  }
+
+  public void setInt(ConfVars c, int value) {
+    properties.put(c.getVarName(), String.valueOf(value));
   }
 
   public int getInt(String envName, String propertyName, int defaultValue) {
@@ -348,6 +379,10 @@ public class SubmarineConfiguration extends XMLConfiguration {
 
   public long getLong(ConfVars c) {
     return getLong(c.name(), c.getVarName(), c.getLongValue());
+  }
+
+  public void setLong(ConfVars c, long value) {
+    properties.put(c.getVarName(), String.valueOf(value));
   }
 
   public long getLong(String envName, String propertyName, long defaultValue) {
@@ -392,6 +427,11 @@ public class SubmarineConfiguration extends XMLConfiguration {
 
   public enum ConfVars {
     SUBMARINE_CONF_DIR("submarine.conf.dir", "conf"),
+    SUBMARINE_LOCALIZATION_MAX_ALLOWED_FILE_SIZE_MB(
+        "submarine.localization.max-allowed-file-size-mb", 2048L),
+    SUBMARINE_RUNTIME_CLASS(
+        "submarine.runtime.class",
+        "org.apache.submarine.server.submitter.yarn.YarnRuntimeFactory"),
     SERVER_ADDR("workbench.server.addr", "0.0.0.0"),
     SERVER_PORT("workbench.server.port", 8080),
     SERVER_SSL("workbench.server.ssl", false),
@@ -419,7 +459,13 @@ public class SubmarineConfiguration extends XMLConfiguration {
     JDBC_PASSWORD("jdbc.password", "password"),
     WORKBENCH_WEBSOCKET_MAX_TEXT_MESSAGE_SIZE(
         "workbench.websocket.max.text.message.size", "1024000"),
-    WORKBENCH_WEB_WAR("workbench.web.war", "submarine-workbench/workbench-web/dist");
+    WORKBENCH_WEB_WAR("workbench.web.war", "submarine-workbench/workbench-web/dist"),
+    // submarine job server settings
+    JOB_SERVER_SSL("job.server.ssl", false),
+    JOB_SERVER_SSL_PORT("job.server.ssl.port", 8443),
+    JOB_SERVER_ADDR("job.server.port", "0.0.0.0"),
+    JOB_SERVER_PORT("job.server.port", 8765),
+    JOB_SERVER_REST_URL_PREFIX("job.server.rest.prefix", "/*");
 
     private String varName;
     @SuppressWarnings("rawtypes")

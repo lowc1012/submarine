@@ -1,0 +1,166 @@
+#!/bin/bash
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# The name of the script being executed.
+SUBMARINE_SHELL_EXECNAME="submarine"
+# Submarine version
+SUBMARINE_VERSION="0.3.0-SNAPSHOT"
+
+# we need to declare this globally as an array, which can only
+# be done outside of a function
+
+function submarine_error
+{
+  echo "$*" 1>&2
+}
+
+}
+function submarine_exit_with_usage
+{
+  local exitcode=$1
+  if [[ -z $exitcode ]]; then
+    exitcode=1
+  fi
+  # shellcheck disable=SC2034
+  if declare -F submarine_usage >/dev/null ; then
+    submarinie_usage
+  elif [[ -x /usr/bin/cowsay ]]; then
+    /usr/bin/cowsay -f elephant "Sorry, no help available."
+  else
+    submarine_error "Sorry, no help available."
+  fi
+  exit $exitcode
+}
+
+# description  Reset the usage information to blank
+function hadoop_reset_usage
+{
+  SUBMARINE_SUBCMD_USAGE=()
+  SUBMARINE_OPTION_USAGE=()
+  SUBMARINE_SUBCMD_USAGE_TYPES=()
+  SUBMARINE_SUBCMD_USAGE_COUNTER=0
+  SUBMARINE_OPTION_USAGE_COUNTER=0
+}
+
+# description  Add a subcommand to the usage output
+# param 1      subcommand
+# param 2      subcommand type
+# param 3      subcommand description
+function submarine_add_subcommand
+{
+  declare subcmd=$1
+  declare subtype=$2
+  declare text=$3
+
+  SUBMARINE_SUBCMD_USAGE[${SUBMARINE_SUBCMD_USAGE_COUNTER}]="${subcmd}@${subtype}@${text}"
+  ((SUBMARINE_SUBCMD_USAGE_COUNTER=SUBMARINE_SUBCMD_USAGE_COUNTER+1))
+}
+
+
+# description  Add an option to the usage output
+# param 1      subcommand
+# param 2      subcommand description
+function submarine_add_option
+{
+  local option=$1
+  local text=$2
+
+  SUBMARINE_OPTION_USAGE[${SUBMARINE_OPTION_USAGE_COUNTER}]="${option}@${text}"
+  ((SUBMARINE_OPTION_USAGE_COUNTER=SUBMARINE_OPTION_USAGE_COUNTER+1))
+}
+
+# description  generic shell script option parser. sets
+# description  SUBMARINE_PARSE_COUNTER to set number the
+# description  caller chould shift
+function submarine_parse_args
+{
+  while true; do
+    case $1 in
+      --
+]
+
+
+## @description  build up the submarine command's usage text.
+## @audience     public
+## @stability    stable
+## @replaceable  no
+function submarine_generate_usage
+{
+  echo "Usage: ${SUBMARINE_SHELL_EXECNAME} <object> [<action>] [<args>]"
+  echo "  Below are all objects / actions:"
+
+}
+
+## @description  Default command handler for submarine command
+## @audience     public
+## @stability    stable
+## @replaceable  no
+## @param        CLI arguments
+function submarinecmd_case
+{
+	subcmd=$1
+	shift
+
+  if [${subcmd} == "job"]; then
+    if [$1 == "run"]; then
+      SUBMARINE_CLASSNAME=org.apache.submarine.client.cli.runjob.RunJobCli;
+    elif [${subcmd} == "show"]; then
+      SUBMARINE_CLASSNAME=org.apache.submarine.client.cli.ShowJobCli;
+    else
+      submarine_exit_with_usage 1
+    fi  
+	else
+	  submarine_exit_with_usage 1
+  else
+
+  fi
+}
+
+function submarine_add_to_classpath
+{
+  SUBMARINE_ALL_JAR=$(find -L "${SUBMARINE_HOME}" -name "submarine-all-${SUBMARINE_VERSION}*.jar")
+  if [[ -n "${$SUBMARINE_ALL_JAR} ]]; then
+    CLASSPATH="${HADOOP_CONF_DIR}:$SUBMARINE_ALL_JAR"
+  else
+    echo "Main class is not found"  
+  fi    
+}
+
+# description  Execute the Java `class`, passing along any `options`.
+# param 1      command
+# param 2      class
+# param 3      [options]
+function submarine_java_exec
+{
+  # run a java command.  this is used for
+  # non-daemons
+  local command=$1
+  local class=$2
+  local action=$3
+  shift 3
+
+  export CLASSPATH
+  exec "${JAVA}" "-cp ${CLASSPATH}" "${class}" "${subcommand}" "${action}" 
+
+}
+
+# get envs
+. "${BIN}/common.sh"
+
+# set classpath
+submarine_add_to_classpath
+
+submarine_java_exec "${SUBMARINE_SHELL_EXECNAME}" "${CLASSPATH}" "job" 
