@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# The name of the script being executed.
+SUBMARINE_SHELL_EXECNAME="submarine"
+MYNAME="${BASH_SOURCE-$0}"
+
+# we need to declare this globally as an array, which can only
+# be done outside of a function
+declare -a SUBMARINE_SUBCMD_USAGE
+declare -a SUBMARINE_OPTION_USAGE
+declare -a SUBMARINE_SUBCMD_USAGE_TYPES
+
+## @description  Add an option to the usage output
+## @audience     private
+## @stability    evolving
+## @replaceable  no
+## @param        subcommand
+## @param        subcommanddesc
+function submarine_add_option
+{
+  local option=$1
+  local text=$2
+
+  SUBMARINE_OPTION_USAGE[${SUBMARINE_OPTION_USAGE_COUNTER}]="${option}@${text}"
+  ((SUBMARINE_OPTION_USAGE_COUNTER=SUBMARINE_OPTION_USAGE_COUNTER+1))
+}
+
+## @description  build up the submarine command's usage text.
+## @audience     public
+## @stability    stable
+## @replaceable  no
+function submarine_generate_usage
+{
+  echo "Usage: ${SUBMARINE_SHELL_EXECNAME} <object> [<action>] [<args>]"
+  echo "  Below are all objects / actions:"
+  
+
+
+
+}
+
+## @description  Default command handler for submarine command
+## @audience     public
+## @stability    stable
+## @replaceable  no
+## @param        CLI arguments
+function submarinecmd_case
+{
+	subcmd=$1
+	shift
+
+  if [${subcmd} == "job"]; then
+    if [$1 == "run"]; then
+      SUBMARINE_CLASSNAME=org.apache.submarine.client.cli.runjob.RunJobCli;
+    elif [${subcmd} == "show"]; then
+      SUBMARINE_CLASSNAME=org.apache.submarine.client.cli.ShowJobCli;
+    else
+      submarine_exit_with_usage 1
+    fi  
+	else
+    submarine_exit_with_usage 1
+  fi
+
+}
