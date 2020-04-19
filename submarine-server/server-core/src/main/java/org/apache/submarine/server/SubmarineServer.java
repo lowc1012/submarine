@@ -21,6 +21,7 @@ package org.apache.submarine.server;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.submarine.server.rest.provider.YamlEntityProvider;
 import org.apache.submarine.server.rpc.SubmarineRpcServer;
+import org.apache.submarine.server.workbench.database.MyBatisUtil;
 import org.apache.submarine.server.workbench.websocket.NotebookServer;
 import org.apache.submarine.commons.cluster.ClusterServer;
 import org.eclipse.jetty.http.HttpVersion;
@@ -63,6 +64,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.Connection;
 
 public class SubmarineServer extends ResourceConfig {
   private static final Logger LOG = LoggerFactory.getLogger(SubmarineServer.class);
@@ -122,6 +124,7 @@ public class SubmarineServer extends ResourceConfig {
 
     rpcServer = SubmarineRpcServer.startRpcServer();
     startServer();
+    checkDBConnection();
   }
 
   @Inject
@@ -292,6 +295,17 @@ public class SubmarineServer extends ResourceConfig {
         (HttpConnectionFactory) connector.getConnectionFactory(HttpVersion.HTTP_1_1.toString());
     int requestHeaderSize = conf.getJettyRequestHeaderSize();
     cf.getHttpConfiguration().setRequestHeaderSize(requestHeaderSize);
+  }
+
+  private static void checkDBConnection() {
+    LOG.info("Checking database connection...");
+    try (Connection conn = MyBatisUtil.getSqlSession().getConnection()) {
+      if (conn != null) {
+        LOG.info("Database connected");
+      }
+    } catch (Exception e) {
+      LOG.error("Database not connected", e);
+    }
   }
 
   // SUBMARINE-422. Fix refreshing page returns 404 error
