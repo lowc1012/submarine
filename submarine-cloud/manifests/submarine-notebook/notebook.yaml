@@ -1,0 +1,26 @@
+apiVersion: kubeflow.org/v1alpha1
+kind: Notebook
+metadata:
+  labels:
+    app: ryan-nb
+  name: ryan-nb
+  namespace: default
+spec:
+  template:
+    spec:  # Your PodSpec here
+      containers:
+      - image: apache/submarine:tf2.1.0-jupyter
+        name: ryan-nb
+        resources:
+          limits: {}
+          requests:
+            cpu: "0.5"
+            memory: 1.0Gi
+#        volumeMounts:
+#            - mountPath: /home/jovyan
+#              name: jupyter-storage
+#     volumes:
+#        - name: jupyter-storage
+#          hostPath:
+#            path: /mnt/disks/submarine-jupyter
+#            type: DirectoryOrCreate
